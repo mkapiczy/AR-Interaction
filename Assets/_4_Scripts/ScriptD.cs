@@ -63,7 +63,7 @@ public class ScriptD : MonoBehaviour, IVirtualButtonEventHandler {
 		R = GameObject.Find ("R");
 		S = GameObject.Find ("S");
 		T = GameObject.Find ("T");
-		U = GameObject.Find ("U");
+		Ó = GameObject.Find ("Ó");
 		V = GameObject.Find ("V");
 		W = GameObject.Find ("W");
 		Y = GameObject.Find ("Y");
@@ -71,8 +71,6 @@ public class ScriptD : MonoBehaviour, IVirtualButtonEventHandler {
 		X = GameObject.Find ("X");
 		SPACE = GameObject.Find ("SPACE");
 		DELETE = GameObject.Find ("DELETE");
-
-
 
 		note = GameObject.Find("Text");
 
@@ -105,28 +103,31 @@ public class ScriptD : MonoBehaviour, IVirtualButtonEventHandler {
 		X.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
 		SPACE.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
 		DELETE.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
-
-
     }
 
-    void Update () {
+	private int counter = 0;
 
-		if (enableWriting == false)
-		{
-			ExecuteAfterTime (60);
+    void Update () {
+		if (!enableWriting) {
+			counter++;
+			if (counter == 30) {
+				enableWriting = true;
+				counter = 0;
+			}
 		}
     }
 
-	IEnumerator ExecuteAfterTime(float time)
+	IEnumerator DelayWriting()
 	{
-		yield return new WaitForSeconds(time/1000);
-
+		yield return new WaitForSeconds(1);
 		enableWriting = true;
 	}
+	
 
 	public void OnButtonPressed(VirtualButtonBehaviour vb) {
 		Debug.Log ("Button pressed " + vb.VirtualButtonName);
 		if (enableWriting) {
+			Debug.Log ("Written " + vb.VirtualButtonName);
 			enableWriting = false;
 			switch (vb.VirtualButtonName) {
 			case "A":
@@ -224,7 +225,10 @@ public class ScriptD : MonoBehaviour, IVirtualButtonEventHandler {
 
 	public void OnButtonReleased(VirtualButtonBehaviour vb)
 	{
-		//vbButtonObject.GetComponent<AudioSource>().Stop();
+		if(vb.VirtualButtonName == "CTR") {
+			Debug.Log ("Disable writing");
+			enableWriting = false;
+		}
 	}
 
 	private void addText(string input){
