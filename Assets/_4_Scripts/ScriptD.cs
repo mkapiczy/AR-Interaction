@@ -3,292 +3,243 @@ using UnityEngine;
 using Vuforia;
 using System.IO;
 using System.Collections.Generic;
+using System.Collections;
 
-public class ScriptD : MonoBehaviour {
+public class ScriptD : MonoBehaviour, IVirtualButtonEventHandler {
 
-    public Camera cam;
+	private GameObject A;
+	private GameObject B;
+	private GameObject C;
+	private GameObject D;
+	private GameObject E;
+	private GameObject F;
+	private GameObject G;
+	private GameObject H;
+	private GameObject I;
+	private GameObject J;
+	private GameObject K;
+	private GameObject L;
+	private GameObject M;
+	private GameObject N;
+	private GameObject O;
+	private GameObject U;
+	private GameObject P;
+	private GameObject R;
+	private GameObject S;
+	private GameObject T;
+	private GameObject Ó;
+	private GameObject V;
+	private GameObject W;
+	private GameObject Y;
+	private GameObject Z;
+	private GameObject X;
+	private GameObject SPACE;
+	private GameObject DELETE;
 
 
-	private GameObject template;
-	private GameObject skull;
+	private string text;
+	private GameObject note;
 
-	Texture2D unwarpedTexture;
-	Texture2D unwarpedTextureClean;
-
-	// intrinsics
-    public float fx = 650;
-    public float fy = 650;
-    public float cx = 320;
-    public float cy = 240;
-
-	public Matrix4x4 originalProjection;
-
-	public int width = 640; 
-	public int height = 480;
-
-    private MatOfPoint2f imagePoints;
-    private Mat camImageMat;
-	private Mat grayscaleMat;
-	private Mat thresholdMat;
-
-	private Mat skullTextureMat;
-
-	private Mat matrixA;
-	private Mat matrixB;
-	private Mat matrixH;
-
-	private Point corner1;
-	private Point corner2;
-	private Point corner3;
-	private Point corner4;
+	private bool enableWriting = true;
 
     void Start () {
-		skull = GameObject.Find ("Skull");
-		template = GameObject.Find ("ImageTarget");
+		A = GameObject.Find ("A");
+		B = GameObject.Find ("B");
+		C = GameObject.Find ("C");
+		D = GameObject.Find ("D");
+		E = GameObject.Find ("E");
+		F = GameObject.Find ("F");
+		G = GameObject.Find ("G");
+		H = GameObject.Find ("H");
+		I = GameObject.Find ("I");
+		J = GameObject.Find ("J");
+		K = GameObject.Find ("K");
+		L = GameObject.Find ("L");
+		M = GameObject.Find ("M");
+		N = GameObject.Find ("N");
+		O = GameObject.Find ("O");
+		U = GameObject.Find ("U");
+		P = GameObject.Find ("P");
+		R = GameObject.Find ("R");
+		S = GameObject.Find ("S");
+		T = GameObject.Find ("T");
+		U = GameObject.Find ("U");
+		V = GameObject.Find ("V");
+		W = GameObject.Find ("W");
+		Y = GameObject.Find ("Y");
+		Z = GameObject.Find ("Z");
+		X = GameObject.Find ("X");
+		SPACE = GameObject.Find ("SPACE");
+		DELETE = GameObject.Find ("DELETE");
 
-		imagePoints = new MatOfPoint2f();
-		imagePoints.alloc(4);
 
-		skullTextureMat = MatDisplay.LoadRGBATexture("_Templates/assignment2b/flying_skull_tex.png");
-		unwarpedTextureClean = new Texture2D (width, height, TextureFormat.RGBA32, false);
 
-		matrixA = new Mat(8, 8,CvType.CV_64FC1);
-		matrixB = new Mat(8, 1, CvType.CV_64FC1);
-		matrixH = new Mat(8, 1, CvType.CV_64FC1);
+		note = GameObject.Find("Text");
+
+
+		A.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		B.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		C.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		D.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		E.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		F.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		G.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		H.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		I.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		J.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		K.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		L.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		M.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		N.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		O.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		U.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		P.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		R.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		S.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		T.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		U.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		V.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		W.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		Y.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		Z.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		X.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		SPACE.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+		DELETE.GetComponent<VirtualButtonBehaviour> ().RegisterEventHandler (this);
+
+
     }
 
     void Update () {
 
-        //Access camera image provided by Vuforia
-        Image camImg = CameraDevice.Instance.GetCameraImage(Image.PIXEL_FORMAT.RGBA8888);
-
-		if (camImg != null) {
-			if (camImageMat == null) {
-				//First time -> instantiate camera image specific data
-				camImageMat = new Mat (camImg.Height, camImg.Width, CvType.CV_8UC4);  //Note: rows=height, cols=width
-				grayscaleMat = new Mat (camImg.Height, camImg.Width, CvType.CV_8UC4);
-				thresholdMat = new Mat (camImg.Height, camImg.Width, CvType.CV_8UC4);
-			}
-			camImageMat.put (0, 0, camImg.Pixels);
-
-			//Grayscale
-			Imgproc.cvtColor (camImageMat, grayscaleMat, Imgproc.COLOR_BGR2GRAY);
-
-			// Blur image
-			Imgproc.GaussianBlur (grayscaleMat, grayscaleMat, new Size (5, 5), 0);
-
-			// Threshold
-			Imgproc.threshold (grayscaleMat, thresholdMat, 60, 255, Imgproc.THRESH_BINARY);
-
-			// Canny edge detector
-			Mat cannyMat = new Mat (camImg.Height, camImg.Width, CvType.CV_8UC4);
-			Imgproc.Canny (thresholdMat, cannyMat, 100, 200);
-
-			//Find contours
-			List<MatOfPoint> contours = new List<MatOfPoint> ();
-			Imgproc.findContours (cannyMat, contours, new Mat (), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-
-			// Find biggest square contour
-			double maxContourArea = 0;
-			MatOfPoint2f finalContour = new MatOfPoint2f ();
-			for (int i = 0; i < contours.Count; i++) {
-				MatOfPoint currentContour = contours [i];
-				double contourArea = Imgproc.contourArea (currentContour);
-
-				MatOfPoint2f curve = new MatOfPoint2f (currentContour.toArray ());
-				MatOfPoint2f approxCurve = new MatOfPoint2f ();
-				Imgproc.approxPolyDP (curve, approxCurve, Imgproc.arcLength (curve, true) * 0.03, true);
-				// Is square?
-				if (approxCurve.total () == 4) {
-					// Is biggest?
-					if (contourArea > maxContourArea) {
-						maxContourArea = contourArea;
-						finalContour = approxCurve;
-					}
-				}
-			}
-
-			// Update corners only when the square is detected
-			if (maxContourArea > 10000) {
-				Point[] points = finalContour.toArray ();
-				corner1 = points [0];
-				corner2 = points [1];
-				corner3 = points [2];
-				corner4 = points [3];
-			}
-
-			// If corners have been defined
-			if(corner1!=null){
-				imagePoints.put (0, 0, corner1.x, corner1.y);
-				imagePoints.put (1, 0, corner2.x, corner2.y);
-				imagePoints.put (2, 0, corner3.x, corner3.y);
-				imagePoints.put (3, 0, corner4.x, corner4.y);
-
-				Imgproc.circle (thresholdMat, corner1, 15, new Scalar (255, 0, 0), -1);
-				Imgproc.circle (thresholdMat, corner2, 15, new Scalar (255, 0, 0), -1);
-				Imgproc.circle (thresholdMat, corner3, 15, new Scalar (255, 0, 0), -1);
-				Imgproc.circle (thresholdMat, corner4, 15, new Scalar (255, 0, 0), -1);
-
-
-//			 Destination points for unwarped camera image
-				var destPoints = new MatOfPoint2f (); 
-				destPoints.alloc (4); 
-				destPoints.put (0, 0, width, 0);
-				destPoints.put (1, 0, width, height);
-				destPoints.put (2, 0, 0, height);
-				destPoints.put (3, 0, 0, 0);
-
-				// Destination points for skull texture
-				var skullDestPoints = new MatOfPoint2f ();
-				skullDestPoints.alloc (4); 
-				skullDestPoints.put (0, 0, 1024, 0);
-				skullDestPoints.put (1, 0, 1024, 1024);
-				skullDestPoints.put (2, 0, 0, 1024);
-				skullDestPoints.put (3, 0, 0, 0);
-
-				// Homography from camera image to destPoints
-//				Mat homography = Calib3d.findHomography (imagePoints, destPoints); 
-				Mat homography = findHomographyCustom (imagePoints, destPoints); 
-				// Warp perspective from camera image to dest points given homography
-				Imgproc.warpPerspective (camImageMat, destPoints, homography, new Size (camImageMat.width (), camImageMat.height ()));
-
-				// Homography from skull texture to camera image
-//				Mat homography2 = Calib3d.findHomography (skullDestPoints, imagePoints);
-				Mat homography2 = findHomographyCustom (skullDestPoints, imagePoints);
-
-				// Destination for unwarped skull texture
-				Mat warpedTexMat = new Mat ();
-				// Warp perspective from skull texture to warped texture mat given homography2
-				Imgproc.warpPerspective (skullTextureMat, warpedTexMat, homography2, new Size (camImageMat.width (), camImageMat.height ()));
-
-				// Mat for main camera image
-				Mat mainImageMat = new Mat ();
-				// Put warped texture on the camera image and put both into mainImageMat
-				Core.addWeighted (camImageMat, 0.95f, warpedTexMat, 0.4f, 0.0, mainImageMat);
-
-				if (Input.GetKey ("space")) {
-					MatDisplay.MatToTexture (destPoints, ref unwarpedTexture); 
-					skull.GetComponent<Renderer> ().material.mainTexture = unwarpedTexture; 
-				} else {
-					Texture2D tex = unwarpedTextureClean;
-					MatDisplay.MatToTexture(skullTextureMat, ref tex);
-					skull.GetComponent<Renderer>().material.mainTexture = tex; 
-				}
-		
-				MatDisplay.DisplayMat (destPoints, MatDisplaySettings.BOTTOM_LEFT);
-				MatDisplay.DisplayMat (mainImageMat, MatDisplaySettings.FULL_BACKGROUND);
-//			MatDisplay.DisplayMat(contoursMat, MatDisplaySettings.TOP_RIGHT);
-				MatDisplay.DisplayMat (thresholdMat, MatDisplaySettings.BOTTOM_RIGHT);
-			} else {
-				MatDisplay.DisplayMat (camImageMat, MatDisplaySettings.FULL_BACKGROUND);
-			}
-
+		if (enableWriting == false)
+		{
+			ExecuteAfterTime (60);
 		}
     }
 
+	IEnumerator ExecuteAfterTime(float time)
+	{
+		yield return new WaitForSeconds(time/1000);
 
-	private Mat findHomographyCustom(MatOfPoint2f imagePoints, MatOfPoint2f destPoints){
-		var u1 = destPoints.get(0, 0)[0];
-		var v1 = destPoints.get(0, 0)[1];
-		var u2 = destPoints.get(1, 0)[0];
-		var v2 = destPoints.get(1, 0)[1];
-		var u3 = destPoints.get(2, 0)[0];
-		var v3 = destPoints.get(2, 0)[1];
-		var u4 = destPoints.get(3, 0)[0];
-		var v4 = destPoints.get(3, 0)[1];
+		enableWriting = true;
+	}
 
-		var x1 = imagePoints.get(0, 0)[0];
-		var y1 = imagePoints.get(0, 0)[1];
-		var x2 = imagePoints.get(1, 0)[0];
-		var y2 = imagePoints.get(1, 0)[1];
-		var x3 = imagePoints.get(2, 0)[0];
-		var y3 = imagePoints.get(2, 0)[1];
-		var x4 = imagePoints.get(3, 0)[0];
-		var y4 = imagePoints.get(3, 0)[1];
+	public void OnButtonPressed(VirtualButtonBehaviour vb) {
+		Debug.Log ("Button pressed " + vb.VirtualButtonName);
+		if (enableWriting) {
+			enableWriting = false;
+			switch (vb.VirtualButtonName) {
+			case "A":
+				addText ("A");
+				break;
+			case "B":
+				addText ("B");
+				break;
+			case "C":
+				addText ("C");
+				break;
+			case "D":
+				addText ("D");
+				break;
+			case "E":
+				addText ("E");
+				break;
+			case "F":
+				addText ("F");
+				break;
+			case "G":
+				addText ("G");
+				break;
+			case "H":
+				addText ("H");
+				break;
+			case "I":
+				addText ("I");
+				break;
+			case "J":
+				addText ("J");
+				break;
+			case "K":
+				addText ("K");
+				break;
+			case "L":
+				addText ("L");
+				break;
+			case "M":
+				addText ("M");
+				break;
+			case "N":
+				addText ("N");
+				break;
+			case "O":
+				addText ("O");
+				break;
+			case "P":
+				addText ("P");
+				break;
+			case "Q":
+				addText ("Q");
+				break;
+			case "R":
+				addText ("R");
+				break;
+			case "S":
+				addText ("S");
+				break;
+			case "T":
+				addText ("T");
+				break;
+			case "U":
+				addText ("U");
+				break;
+			case "V":
+				addText ("V");
+				break;
+			case "W":
+				addText ("W");
+				break;
+			case "X":
+				addText ("X");
+				break;
+			case "Y":
+				addText ("Y");
+				break;
+			case "Z":
+				addText ("Z");
+				break;
+			case "SPACE":
+				addText (" ");
+				break;
+			case "DELETE":
+				removeChar ();
+				break;
+			}
+		}
+	}
 
+	public IEnumerable<WaitForSeconds> Waaait(float s)
+	{
+		yield return new WaitForSeconds(s);
+	}
 
-		// First pair
-		matrixA.put(0, 0, x1);
-		matrixA.put(0, 1, y1);
-		matrixA.put(0, 2, 1);
-		matrixA.put(0, 6, -u1*x1);
-		matrixA.put(0, 7, -u1*y1);
+	public void OnButtonReleased(VirtualButtonBehaviour vb)
+	{
+		//vbButtonObject.GetComponent<AudioSource>().Stop();
+	}
 
-		matrixA.put(1, 3, x1);
-		matrixA.put(1, 4, y1);
-		matrixA.put(1, 5, 1);
-		matrixA.put(1, 6, -v1 * x1);
-		matrixA.put(1, 7, -v1 * y1);
+	private void addText(string input){
+		text = text + input;
+		note.GetComponent<TextMesh> ().text = text;
+		Debug.Log (text);
+	}
 
-		// Second pair
-		matrixA.put(2, 0, x2);
-		matrixA.put(2, 1, y2);
-		matrixA.put(2, 2, 1);
-		matrixA.put(2, 6, -u2 * x2);
-		matrixA.put(2, 7, -u2 * y2);
-
-		matrixA.put(3, 3, x2);
-		matrixA.put(3, 4, y2);
-		matrixA.put(3, 5, 1);
-		matrixA.put(3, 6, -v2 * x2);
-		matrixA.put(3, 7, -v2 * y2);
-
-		// Third pair
-		matrixA.put(4, 0, x3);
-		matrixA.put(4, 1, y3);
-		matrixA.put(4, 2, 1);
-		matrixA.put(4, 6, -u3 * x3);
-		matrixA.put(4, 7, -u3 * y3);
-
-		matrixA.put(5, 3, x3);
-		matrixA.put(5, 4, y3);
-		matrixA.put(5, 5, 1);
-		matrixA.put(5, 6, -v3 * x3);
-		matrixA.put(5, 7, -v3 * y3);
-
-		// Forth pair
-		matrixA.put(6, 0, x4);
-		matrixA.put(6, 1, y4);
-		matrixA.put(6, 2, 1);
-		matrixA.put(6, 6, -u4 * x4);
-		matrixA.put(6, 7, -u4 * y4);
-
-		matrixA.put(7, 3, x4);
-		matrixA.put(7, 4, y4);
-		matrixA.put(7, 5, 1);
-		matrixA.put(7, 6, -v4 * x4);
-		matrixA.put(7, 7, -v4 * y4);
-
-		Mat matrixB = new Mat(8, 1, CvType.CV_64FC1);
-
-		// Initialize the b vector 
-		matrixB.put(0, 0, u1);
-		matrixB.put(1, 0, v1);
-		matrixB.put(2, 0, u2);
-		matrixB.put(3, 0, v2);
-		matrixB.put(4, 0, u3);
-		matrixB.put(5, 0, v3);
-		matrixB.put(6, 0, u4);
-		matrixB.put(7, 0, v4);
-
-		//			var homography = findHomographyCustom(imagePoints, destPoints); // Finding the image
-
-		//			destPoints = homography * imagePoins;
-		//			(u, v) = H * (x, y)
-		//			A * v = b
-		Core.solve(matrixA, matrixB, matrixH);
-		Mat homography = new Mat(3, 3, CvType.CV_64FC1);
-
-		// Reallocate values to a 3x3 matrix
-		homography.put(0, 0, matrixH.get(0, 0));
-		homography.put(0, 1, matrixH.get(1, 0));
-		homography.put(0, 2, matrixH.get(2, 0));
-		homography.put(1, 0, matrixH.get(3, 0));
-		homography.put(1, 1, matrixH.get(4, 0));
-		homography.put(1, 2, matrixH.get(5, 0));
-		homography.put(2, 0, matrixH.get(6, 0));
-		homography.put(2, 1, matrixH.get(7, 0));
-		homography.put(2, 2, 1); // Normalize
-		return homography;
+	private void removeChar()
+	{
+		if (text.Length > 0)
+		{
+			text = text.Remove(text.Length - 1);
+			note.GetComponent<TextMesh>().text = text;
+			Debug.Log(text);
+		}
 	}
 }
