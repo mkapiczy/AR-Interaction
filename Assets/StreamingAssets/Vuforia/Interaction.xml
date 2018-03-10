@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <QCARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="qcar_config.xsd">
   <Tracking>
+    <ImageTarget name="terrain" size="13.000000 8.700000" />
     <ImageTarget name="Keyboard3" size="27.000000 19.989473" />
-    <ImageTarget name="Keyboard" size="27.000000 21.160389" />
   </Tracking>
 </QCARConfig>
